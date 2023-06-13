@@ -1,0 +1,102 @@
+# Scani-Radar-Bot
+
+#include <Servo.h>
+
+// Define pins for ultrasonic sensors, servo motors, buzzer, and LEDs
+const int trigPin = 9;
+const int echoPin = 10;
+const int servoHPin = 11;
+const int servoVPin = 12;
+const int buzzerPin = 8;
+const int ledPin = 3;
+const int ledPin1 = 4;
+const int ledPin2 = 5;
+
+// Define minimum and maximum distance for detecting objects
+const int minDistance = 10;
+const int maxDistance = 50;
+
+// Variables for distance and angles
+long duration, distance;
+int angleH = 0;
+int angleV = 90;
+
+// Create servo objects
+Servo radarH;
+Servo radarV;
+
+void setup() {
+  // Initialize serial communication
+  Serial.begin(9600);
+
+  // Initialize pin modes
+  pinMode(trigPin, OUTPUT);
+  pinMode(echoPin, INPUT);
+  pinMode(buzzerPin, OUTPUT);
+  pinMode(ledPin, OUTPUT);
+  pinMode(ledPin1, OUTPUT);
+  pinMode(ledPin2, OUTPUT);
+
+  // Attach the servo motors to the pins
+  radarH.attach(servoHPin);
+  radarV.attach(servoVPin);
+}
+
+void loop() {
+  // Rotate the servo motors
+  for (angleH = 0; angleH <= 180; angleH += 10) {
+    radarH.write(angleH);
+    delay(50);
+    for (angleV = 0; angleV <= 180; angleV += 10) {
+      radarV.write(angleV);
+      delay(50);
+
+      // Measure the distance
+      distance = measureDistance();
+
+      // Check if the distance is within range
+      if (distance <= minDistance) {
+        // Turn on the LED and buzzer
+        digitalWrite(ledPin, HIGH);
+        digitalWrite(ledPin1, HIGH);
+        digitalWrite(ledPin2, HIGH);
+        delay(1000);  // wait one second
+        digitalWrite(ledPin, LOW);
+        digitalWrite(ledPin1, LOW);
+        digitalWrite(ledPin2, LOW);
+        noTone(buzzerPin);
+      } else if (distance > minDistance && distance < maxDistance) {
+        // Turn off the outer LEDs and buzzer, turn on middle LED
+        digitalWrite(ledPin1, HIGH);
+        noTone(buzzerPin);
+      } else if (distance > maxDistance) {
+        // Turn off the inner and middle LEDs, turn on outer LED
+        digitalWrite(ledPin2, HIGH);
+        noTone(buzzerPin);
+      } else {
+        // Turn off all LEDs
+        digitalWrite(ledPin, LOW);
+        digitalWrite(ledPin1, LOW);
+        digitalWrite(ledPin2, LOW);
+      }
+    }
+  }
+}
+
+// Function to measure the distance
+long measureDistance() {
+  // Clear trigger pin
+  digitalWrite(trigPin, LOW);
+  delayMicroseconds(2);
+
+  // Trigger a pulse
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin, LOW);
+
+  // Measure the duration of the pulse
+  duration = pulseIn(echoPin, HIGH);
+
+  // Convert the duration to distance
+  return duration / 58.2;
+}
